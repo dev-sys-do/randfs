@@ -10,6 +10,7 @@ use std::time::{Duration, UNIX_EPOCH};
 const RANDFS_ROOT_DIR_INODE: u64 = 1;
 const RANDFS_FILE_INODE: u64 = 2;
 const RANDFS_FILE_NAME: &str = "1.txt";
+const RANDFS_FILE_SIZE: u64 = 8;
 
 const RANDFS_DIR_ATTR: FileAttr = FileAttr {
     ino: RANDFS_ROOT_DIR_INODE,
@@ -22,6 +23,24 @@ const RANDFS_DIR_ATTR: FileAttr = FileAttr {
     kind: FileType::Directory,
     perm: 0o755,
     nlink: 2,
+    uid: 501,
+    gid: 20,
+    rdev: 0,
+    flags: 0,
+    blksize: 512,
+};
+
+const RANDFS_FILE_ATTR: FileAttr = FileAttr {
+    ino: RANDFS_FILE_INODE,
+    size: RANDFS_FILE_SIZE,
+    blocks: 1,
+    atime: UNIX_EPOCH, // 1970-01-01 00:00:00
+    mtime: UNIX_EPOCH,
+    ctime: UNIX_EPOCH,
+    crtime: UNIX_EPOCH,
+    kind: FileType::RegularFile,
+    perm: 0o644,
+    nlink: 1,
     uid: 501,
     gid: 20,
     rdev: 0,
@@ -49,6 +68,9 @@ impl RandFs {
 impl Filesystem for RandFs {
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
         log::debug!("lookup {:?} for parent {parent}", name);
+        if parent == RANDFS_ROOT_DIR_INODE && name.to_str().unwrap() == RANDFS_FILE_NAME {
+            return reply.entry(&Duration::from_secs(1), &RANDFS_FILE_ATTR, 0);
+        }
 
         reply.error(ENOENT);
     }
@@ -58,7 +80,7 @@ impl Filesystem for RandFs {
         if inode == RANDFS_ROOT_DIR_INODE {
             reply.attr(&Duration::from_secs(1), &RANDFS_DIR_ATTR);
         } else {
-            reply.error(ENOENT);
+            reply.attr(&Duration::from_secs(1), &RANDFS_FILE_ATTR);
         }
     }
 
