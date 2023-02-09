@@ -12,7 +12,6 @@ const RANDFS_ROOT_DIR_INODE: u64 = 1;
 const RANDFS_FILE_INODE: u64 = 2;
 const RANDFS_FILE_NAME: &str = "1.txt";
 const RANDFS_FILE_SIZE: u64 = 8;
-const RANDFS_FILE_DATA: &str = "12345678";
 
 const RANDFS_DIR_ATTR: FileAttr = FileAttr {
     ino: RANDFS_ROOT_DIR_INODE,
@@ -59,11 +58,34 @@ struct ReplyDirectoryEntry {
     name: String,
 }
 
-struct RandFs;
+struct RandFsFile {
+    data: u16,
+}
+
+impl RandFsFile {
+    fn new() -> RandFsFile {
+        RandFsFile {
+            data: rand::random(),
+        }
+    }
+
+    fn read(&mut self, offset: i64) -> String {
+        if offset == 0 {
+            self.data = rand::random();
+        }
+        format!("{:#x?}", self.data)
+    }
+}
+
+struct RandFs {
+    file: RandFsFile,
+}
 
 impl RandFs {
     fn new() -> Self {
-        RandFs {}
+        RandFs {
+            file: RandFsFile::new(),
+        }
     }
 }
 
@@ -99,7 +121,7 @@ impl Filesystem for RandFs {
     ) {
         log::debug!("read for {inode} at {offset}");
         if inode == RANDFS_FILE_INODE {
-            return reply.data(&RANDFS_FILE_DATA.as_bytes()[offset as usize..]);
+            return reply.data(&self.file.read(offset).as_bytes()[offset as usize..]);
         }
 
         reply.error(ENOENT);
