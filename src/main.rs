@@ -8,6 +8,8 @@ use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH};
 
 const RANDFS_ROOT_DIR_INODE: u64 = 1;
+const RANDFS_FILE_INODE: u64 = 2;
+const RANDFS_FILE_NAME: &str = "1.txt";
 
 const RANDFS_DIR_ATTR: FileAttr = FileAttr {
     ino: RANDFS_ROOT_DIR_INODE,
@@ -83,6 +85,11 @@ impl Filesystem for RandFs {
                 inode: RANDFS_ROOT_DIR_INODE,
                 kind: FileType::Directory,
                 name: "..".to_string(),
+            },
+            ReplyDirectoryEntry {
+                inode: RANDFS_FILE_INODE,
+                kind: FileType::RegularFile,
+                name: RANDFS_FILE_NAME.to_string(),
             },
         ];
 
