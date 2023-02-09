@@ -1,6 +1,7 @@
 use clap::Parser;
 use fuser::{
-    FileAttr, FileType, Filesystem, MountOption, ReplyAttr, ReplyDirectory, ReplyEntry, Request,
+    FileAttr, FileType, Filesystem, MountOption, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry,
+    Request,
 };
 use libc::ENOENT;
 use std::ffi::OsStr;
@@ -11,6 +12,7 @@ const RANDFS_ROOT_DIR_INODE: u64 = 1;
 const RANDFS_FILE_INODE: u64 = 2;
 const RANDFS_FILE_NAME: &str = "1.txt";
 const RANDFS_FILE_SIZE: u64 = 8;
+const RANDFS_FILE_DATA: &str = "12345678";
 
 const RANDFS_DIR_ATTR: FileAttr = FileAttr {
     ino: RANDFS_ROOT_DIR_INODE,
@@ -82,6 +84,25 @@ impl Filesystem for RandFs {
         } else {
             reply.attr(&Duration::from_secs(1), &RANDFS_FILE_ATTR);
         }
+    }
+
+    fn read(
+        &mut self,
+        _req: &Request,
+        inode: u64,
+        _fh: u64,
+        offset: i64,
+        _size: u32,
+        _flags: i32,
+        _lock: Option<u64>,
+        reply: ReplyData,
+    ) {
+        log::debug!("read for {inode} at {offset}");
+        if inode == RANDFS_FILE_INODE {
+            return reply.data(&RANDFS_FILE_DATA.as_bytes()[offset as usize..]);
+        }
+
+        reply.error(ENOENT);
     }
 
     fn readdir(
